@@ -14,12 +14,11 @@ type Fetcher interface {
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
 func Crawl(url string, depth int, fetcher Fetcher) {
-  crawled_urls := make(map[string]bool)
+  crawled_urls := map[string]bool{url: true}
   var wait_group sync.WaitGroup
 
   var crawl func(string, int)
   crawl = func(url string, depth int) {
-    crawled_urls[url] = true
     defer wait_group.Done()
 
     if depth <= 0 {
@@ -37,6 +36,7 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 
     for _, u := range urls {
       if !crawled_urls[u] {
+        crawled_urls[u] = true
         wait_group.Add(1)
         go crawl(u, depth-1)
       }
