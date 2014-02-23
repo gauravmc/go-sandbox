@@ -2,6 +2,7 @@ package main
 
 import (
   "fmt"
+  "sync"
 )
 
 type Fetcher interface {
@@ -14,10 +15,12 @@ type Fetcher interface {
 // pages starting with url, to a maximum of depth.
 func Crawl(url string, depth int, fetcher Fetcher) {
   crawled_urls := make(map[string]bool)
+  var wait_group sync.WaitGroup
 
   var crawl func(string, int)
   crawl = func(url string, depth int) {
     crawled_urls[url] = true
+    defer wait_group.Done()
 
     if depth <= 0 {
       return
@@ -34,11 +37,14 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 
     for _, u := range urls {
       if !crawled_urls[u] {
-        crawl(u, depth-1)
+        wait_group.Add(1)
+        go crawl(u, depth-1)
       }
     }
   }
-  crawl(url, depth)
+  wait_group.Add(1)
+  go crawl(url, depth)
+  wait_group.Wait()
 
   return
 }
