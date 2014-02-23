@@ -10,31 +10,35 @@ type Fetcher interface {
   Fetch(url string) (body string, urls []string, err error)
 }
 
-var crawled_urls = make(map[string]bool)
-
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
 func Crawl(url string, depth int, fetcher Fetcher) {
-  crawled_urls[url] = true
+  crawled_urls := make(map[string]bool)
 
-  if depth <= 0 {
-    return
-  }
+  var crawl func(string, int)
+  crawl = func(url string, depth int) {
+    crawled_urls[url] = true
 
-  body, urls, err := fetcher.Fetch(url)
+    if depth <= 0 {
+      return
+    }
 
-  if err != nil {
-    fmt.Println(err)
-    return
-  } else {
-    fmt.Printf("found: %s %q\n", url, body)
-  }
+    body, urls, err := fetcher.Fetch(url)
 
-  for _, u := range urls {
-    if !crawled_urls[u] {
-      Crawl(u, depth-1, fetcher)
+    if err != nil {
+      fmt.Println(err)
+      return
+    } else {
+      fmt.Printf("found: %s %q\n", url, body)
+    }
+
+    for _, u := range urls {
+      if !crawled_urls[u] {
+        crawl(u, depth-1)
+      }
     }
   }
+  crawl(url, depth)
 
   return
 }
